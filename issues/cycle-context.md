@@ -1,67 +1,56 @@
-# ClothList — Cycle 1 Context
+# ClothList — Cycle 2 Context
 *Auto-updated by `/build-admin complete`. Last updated: 2026-05-20*
 
 ## Cycle overview
 
-Build the MVP: photo upload → Claude Vision AI analysis → WhatsApp-ready caption → copy/share.
+Add multi-currency pricing (GBP/NGN) and a long-form listing description generator for UK sellers on eBay, Vinted, and Shopify.
 
 ## Issues
 
 | # | Title | Status |
 |---|-------|--------|
-| 001 | Project scaffold | done |
-| 002 | Image input module | done |
-| 003 | AI analysis API + module | done |
-| 004 | Caption generator module | done |
-| 005 | End-to-end listing flow UI | done |
-| 006 | Share/copy module | done |
-| 007 | PWA hardening | **todo** |
+| 008 | Core type changes | done |
+| 009 | Currency-aware analysis | done |
+| 010 | Currency toggle UI + localStorage | done |
+| 011 | Multi-currency caption generator | done |
+| 012 | Currency switch post-analysis confirmation | done |
+| 013 | Polish API + module | done |
+| 014 | Description accordion UI | done |
 
 ## Files created this cycle
 
 | Path | What it does |
 |------|-------------|
-| `src/app/layout.tsx` | Root layout — mobile viewport, theme color, Geist font |
-| `src/app/page.tsx` | Home screen — Client Component holding base64 image state, renders ImageInput |
-| `src/app/globals.css` | Global styles — Tailwind, touch targets, no horizontal overflow |
-| `src/app/api/analyze/route.ts` | `POST /api/analyze` — rate limiting, validation, Claude Vision call, structured error responses |
-| `src/components/ImageInput.tsx` | Camera/gallery picker with canvas compression, preview, retake button |
-| `src/lib/analyzeClothingImage.ts` | Claude Vision integration — prompts for JSON, parses + validates `ClothingAnalysis` |
-| `src/lib/rateLimit.ts` | In-memory IP rate limiter — 10 req/hour sliding window |
-| `src/types/clothing.ts` | `ClothingAnalysis` type definition |
-| `src/__tests__/analyzeClothingImage.test.ts` | 6 unit tests for `parseAnalysis` — all run without a real API key |
-| `src/lib/generateCaption.ts` | Pure caption generator — `generateCaption(analysis, overrides?) → string`; emoji map, price formatter, 200-char enforcer |
-| `src/__tests__/generateCaption.test.ts` | 13 unit tests covering all caption variants and edge cases |
-| `vitest.config.ts` | Vitest config with `@/` path alias |
-| `.env.local.example` | Template for ANTHROPIC_API_KEY |
-| `.env.local` | Local env file (gitignored) |
-| `src/components/ListingReview.tsx` | Full review screen — detected details panel, size/price overrides, editable caption textarea, live char count, share/copy CTA, regenerate and new-item buttons |
-| `src/lib/shareCaption.ts` | `shareCaption(caption, imageBlob?) → ShareResult` — Web Share API with clipboard text fallback |
-| `src/__tests__/shareCaption.test.ts` | Unit tests for shareCaption — mocks `navigator.share` and `navigator.clipboard` |
+| `src/lib/polishDescription.ts` | `polishDescription(draft, notes, currency) → Promise<string>` — Claude text-only call, `max_tokens: 256` |
+| `src/app/api/polish/route.ts` | `POST /api/polish` — validation, rate limiting, structured errors, returns `{ description: string }` |
+| `src/components/DescriptionAccordion.tsx` | Collapsed accordion: context notes → generate (instant) → edit textarea → Polish with AI → undo → copy |
+| `src/__tests__/polishDescription.test.ts` | 7 unit tests for `polishDescription` — mock Claude client via `vi.hoisted` |
 
 ## Files modified this cycle
 
 | Path | What changed |
 |------|-------------|
-| `package.json` | Added `@anthropic-ai/sdk`, `vitest`, and `"test": "vitest run"` script |
+| `src/types/clothing.ts` | Added `Currency` type alias; renamed `estimatedPriceNaira → estimatedPrice`; added `currency: Currency` and `rawDescriptionDraft: string` to `ClothingAnalysis` |
+| `src/lib/analyzeClothingImage.ts` | `analyzeClothingImage` now accepts `currency: Currency`; system prompt is built dynamically with GBP/NGN price ranges; JSON schema includes `estimatedPrice`, `currency`, `rawDescriptionDraft`; `parseAnalysis` extracts all three new fields |
+| `src/app/api/analyze/route.ts` | Accepts `currency` field in request body, defaults to `'GBP'`, passes to `analyzeClothingImage` |
+| `src/lib/generateCaption.ts` | Exported `formatPrice(price, currency) → string`; `generateCaption` accepts optional `currency` param (falls back to `analysis.currency`) |
+| `src/app/page.tsx` | Holds `currency` state (localStorage-persisted, default `'GBP'`); `pendingCurrency` for post-analysis switch confirmation; `CurrencyToggle` pill shown on input + review screens; `runAnalysis` accepts optional `overrideCurrency` |
+| `src/components/ListingReview.tsx` | Uses `analysis.currency` for price display symbol and price override label; renders `DescriptionAccordion` below New Item button |
+| `src/__tests__/analyzeClothingImage.test.ts` | Updated for new JSON schema (`estimatedPrice`, `currency`, `rawDescriptionDraft`); 3 new tests |
+| `src/__tests__/generateCaption.test.ts` | `base` fixture updated (`estimatedPrice`, `currency`, `rawDescriptionDraft`); new `formatPrice` describe block with 5 tests |
 
 ## Key patterns established this cycle
 
-- **Dark mobile shell:** `bg-zinc-950 text-zinc-50` is the base palette — keep all screens consistent with this.
-- **Touch targets:** `globals.css` enforces `min-height: 44px` on buttons/links — don't override with smaller heights.
-- **No horizontal scroll:** `overflow-x: hidden` on html/body — all layouts must stay within the viewport width.
-- **Viewport:** Configured via Next.js `export const viewport` in `layout.tsx`, not a manual meta tag.
-- **Env vars:** `ANTHROPIC_API_KEY` must stay server-side only — never import from client components.
-- **ClothingAnalysis shape:** Canonical type in `src/types/clothing.ts` — all downstream modules (caption generator, UI) import from there.
-- **parseAnalysis is exported:** Tests import `parseAnalysis` directly from `analyzeClothingImage.ts` — don't make it private.
-- **Rate limiter is in-memory:** Lives in `src/lib/rateLimit.ts` using a module-level `Map`. Resets on server restart — acceptable for MVP. Do not introduce Redis without discussing it.
-- **Model:** Claude `claude-opus-4-5-20251001` is used for image analysis — don't downgrade to Haiku, it misses fine detail.
-- **Image compression:** Client compresses to max 1 MB before sending. API expects a raw base64 string (no `data:image/...;base64,` prefix).
-- **Caption shape:** 3 lines always — `[descriptors] [brand] itemType [emojis]` / `[size] available` or `Size — ask seller` / `₦price — DM to order!`. Max 200 chars; descriptors dropped first if over limit.
-- **`CaptionOverrides`:** Exported type from `generateCaption.ts` — `{ size?: string; price?: number }`. Used by `ListingReview` for the override inputs.
-- **ListingReview wiring:** `page.tsx` holds `Phase` state (`input | loading | review | error`). On photo confirm, it posts to `/api/analyze`, transitions to `review`, and passes `ClothingAnalysis` + `imageDataUrl` to `ListingReview`. Error state shows the API error message with a "Try again" button.
-- **dataUrlToBlob:** Helper in `ListingReview.tsx` converts base64 data URL to a `Blob` for passing to `shareCaption` — needed because `ImageInput` emits a data URL, not a File.
-- **shareCaption fallback:** If `navigator.share` is absent or throws `AbortError`, falls back to `navigator.clipboard.writeText(caption)`. If clipboard also fails, returns `{ status: "error" }`.
+- **`Currency` type alias:** `'GBP' | 'NGN'` exported from `src/types/clothing.ts` — use this type everywhere, never inline the union.
+- **Dynamic system prompt:** `buildSystemPrompt(currency)` in `analyzeClothingImage.ts` constructs the prompt at call time — price ranges and JSON field notes differ by currency. Don't hardcode a single prompt.
+- **`rawDescriptionDraft` is observation-only:** Claude must describe only what it sees. Seller context notes are the sole source of provenance details. This invariant is enforced by the prompt wording — do not weaken it.
+- **`polishDescription` is a deep module:** Simple interface (`draft, notes, currency → string`), fully testable with a mocked client. All Claude API concerns live inside it; callers know nothing about Anthropic SDK.
+- **`vi.hoisted` for shared mock state:** When a test file needs a `vi.fn()` mock that's referenced both in `vi.mock()` and in test assertions, define it with `vi.hoisted(() => ({ mockFn: vi.fn() }))` — plain `const` won't work because `vi.mock` is hoisted before variable declarations.
+- **Post-analysis currency switch:** `pendingCurrency` state in `page.tsx` intercepts toggle clicks when `analysis !== null`. Confirmation banner shown; confirm triggers re-analysis with new currency; cancel restores previous selection. Never silently convert numbers.
+- **`formatPrice` not `₦` literals:** All price rendering goes through `formatPrice(price, currency)` — no hardcoded currency symbols anywhere in caption or UI code.
+- **`max_tokens: 256` on polish:** Description is capped at 120 words (~160 tokens). 256 is the ceiling — don't increase it without re-evaluating cost.
+- **DescriptionAccordion is independent:** It receives `rawDescriptionDraft` and `currency` and manages all its own state. It does not share state with `ListingReview` or the caption flow.
 
 ## What remains
-- **007** — PWA: manifest.json, service worker, installability, offline shell.
+
+All Cycle 2 issues are complete. Next cycle begins after friend validation (~2026-05-23).

@@ -1,3 +1,5 @@
+export type Currency = 'GBP' | 'NGN'
+
 export interface ClothingAnalysis {
   itemType: string
   brand: string | null
@@ -5,6 +7,8 @@ export interface ClothingAnalysis {
   pattern: string | null
   sizeDetected: string | null
   sizeConfidence: 'high' | 'low' | 'none'
-  estimatedPriceNaira: number
+  estimatedPrice: number
+  currency: Currency
+  rawDescriptionDraft: string
   descriptors: string[]
 }

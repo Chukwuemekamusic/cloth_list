@@ -1,8 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { parseAnalysis } from '@/lib/analyzeClothingImage'
-
-// Unit tests for parseAnalysis — no real Claude API needed.
-// Full-stack tests mock the module to verify the API route handles responses correctly.
 
 vi.mock('@anthropic-ai/sdk', () => ({
   default: vi.fn().mockImplementation(() => ({
@@ -13,7 +10,7 @@ vi.mock('@anthropic-ai/sdk', () => ({
 }))
 
 describe('parseAnalysis', () => {
-  it('parses a full valid response', () => {
+  it('parses a full valid GBP response', () => {
     const raw = JSON.stringify({
       itemType: 'ankara dress',
       brand: null,
@@ -21,7 +18,9 @@ describe('parseAnalysis', () => {
       pattern: 'floral',
       sizeDetected: 'M',
       sizeConfidence: 'high',
-      estimatedPriceNaira: 22000,
+      estimatedPrice: 35,
+      currency: 'GBP',
+      rawDescriptionDraft: 'A vibrant blue ankara dress with floral print.',
       descriptors: ['cotton', 'slim fit'],
     })
 
@@ -33,15 +32,37 @@ describe('parseAnalysis', () => {
     expect(result.pattern).toBe('floral')
     expect(result.sizeDetected).toBe('M')
     expect(result.sizeConfidence).toBe('high')
-    expect(result.estimatedPriceNaira).toBe(22000)
+    expect(result.estimatedPrice).toBe(35)
+    expect(result.currency).toBe('GBP')
+    expect(result.rawDescriptionDraft).toBe('A vibrant blue ankara dress with floral print.')
     expect(result.descriptors).toEqual(['cotton', 'slim fit'])
+  })
+
+  it('parses a full valid NGN response', () => {
+    const raw = JSON.stringify({
+      itemType: 'joggers',
+      brand: null,
+      color: 'black',
+      pattern: null,
+      sizeDetected: 'L',
+      sizeConfidence: 'high',
+      estimatedPrice: 12000,
+      currency: 'NGN',
+      rawDescriptionDraft: 'Black joggers with an elastic waistband.',
+      descriptors: ['slim fit'],
+    })
+
+    const result = parseAnalysis(raw)
+    expect(result.estimatedPrice).toBe(12000)
+    expect(result.currency).toBe('NGN')
   })
 
   it('fills in defaults for missing optional fields', () => {
     const raw = JSON.stringify({
       itemType: 'joggers',
       color: 'black',
-      estimatedPriceNaira: 12000,
+      estimatedPrice: 12000,
+      currency: 'NGN',
     })
 
     const result = parseAnalysis(raw)
@@ -50,16 +71,31 @@ describe('parseAnalysis', () => {
     expect(result.pattern).toBeNull()
     expect(result.sizeDetected).toBeNull()
     expect(result.sizeConfidence).toBe('none')
+    expect(result.rawDescriptionDraft).toBe('')
     expect(result.descriptors).toEqual([])
   })
 
+  it('returns rawDescriptionDraft as empty string when field is absent', () => {
+    const raw = JSON.stringify({
+      itemType: 'hoodie',
+      color: 'grey',
+      estimatedPrice: 20,
+      currency: 'GBP',
+    })
+
+    const result = parseAnalysis(raw)
+    expect(result.rawDescriptionDraft).toBe('')
+  })
+
   it('extracts JSON embedded in prose', () => {
-    const raw = `Here is my analysis:\n{"itemType":"polo shirt","brand":"Lacoste","color":"white","pattern":null,"sizeDetected":"L","sizeConfidence":"high","estimatedPriceNaira":10000,"descriptors":["premium"]}`
+    const raw = `Here is my analysis:\n{"itemType":"polo shirt","brand":"Lacoste","color":"white","pattern":null,"sizeDetected":"L","sizeConfidence":"high","estimatedPrice":25,"currency":"GBP","rawDescriptionDraft":"A white Lacoste polo shirt.","descriptors":["premium"]}`
 
     const result = parseAnalysis(raw)
     expect(result.itemType).toBe('polo shirt')
     expect(result.brand).toBe('Lacoste')
     expect(result.sizeConfidence).toBe('high')
+    expect(result.currency).toBe('GBP')
+    expect(result.rawDescriptionDraft).toBe('A white Lacoste polo shirt.')
   })
 
   it('throws on malformed JSON with no recoverable object', () => {
@@ -72,7 +108,9 @@ describe('parseAnalysis', () => {
       color: 'indigo',
       sizeDetected: 'XL',
       sizeConfidence: 'maybe',
-      estimatedPriceNaira: 18000,
+      estimatedPrice: 18,
+      currency: 'GBP',
+      rawDescriptionDraft: '',
       descriptors: [],
     })
 
@@ -80,11 +118,27 @@ describe('parseAnalysis', () => {
     expect(result.sizeConfidence).toBe('none')
   })
 
+  it('defaults currency to NGN when value is unrecognised', () => {
+    const raw = JSON.stringify({
+      itemType: 'hoodie',
+      color: 'grey',
+      estimatedPrice: 15,
+      currency: 'EUR',
+      rawDescriptionDraft: '',
+      descriptors: [],
+    })
+
+    const result = parseAnalysis(raw)
+    expect(result.currency).toBe('NGN')
+  })
+
   it('filters non-string values out of descriptors array', () => {
     const raw = JSON.stringify({
       itemType: 'hoodie',
       color: 'grey',
-      estimatedPriceNaira: 15000,
+      estimatedPrice: 15,
+      currency: 'GBP',
+      rawDescriptionDraft: '',
       descriptors: ['warm', 42, null, 'oversized'],
     })
 

@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server'
-import { analyzeClothingImage } from '@/lib/analyzeClothingImage'
+import { polishDescription } from '@/lib/polishDescription'
 import { checkRateLimit } from '@/lib/rateLimit'
 import type { Currency } from '@/types/clothing'
 
@@ -27,24 +27,20 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'Invalid JSON body.' }, { status: 400 })
   }
 
-  if (
-    typeof body !== 'object' ||
-    body === null ||
-    typeof (body as Record<string, unknown>).image !== 'string' ||
-    (body as Record<string, unknown>).image === ''
-  ) {
-    return Response.json({ error: 'Missing or empty "image" field.' }, { status: 400 })
+  const b = body as Record<string, unknown>
+  if (typeof b.draft !== 'string' || b.draft.trim() === '') {
+    return Response.json({ error: 'Missing or empty "draft" field.' }, { status: 400 })
   }
 
-  const b = body as { image: string; currency?: unknown }
-  const base64 = b.image
+  const draft = b.draft as string
+  const notes = typeof b.notes === 'string' ? b.notes : ''
   const currency: Currency = b.currency === 'GBP' || b.currency === 'NGN' ? b.currency : 'GBP'
 
   try {
-    const analysis = await analyzeClothingImage(base64, currency)
-    return Response.json(analysis)
+    const description = await polishDescription(draft, notes, currency)
+    return Response.json({ description })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Analysis failed.'
+    const message = err instanceof Error ? err.message : 'Polish failed.'
     return Response.json({ error: message }, { status: 502 })
   }
 }

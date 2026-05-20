@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateCaption } from '@/lib/generateCaption'
+import { generateCaption, formatPrice } from '@/lib/generateCaption'
 import type { ClothingAnalysis } from '@/types/clothing'
 
 const base: ClothingAnalysis = {
@@ -9,7 +9,9 @@ const base: ClothingAnalysis = {
   pattern: null,
   sizeDetected: 'L',
   sizeConfidence: 'high',
-  estimatedPriceNaira: 8500,
+  estimatedPrice: 8500,
+  currency: 'NGN',
+  rawDescriptionDraft: '',
   descriptors: ['premium', 'slim fit'],
 }
 
@@ -88,7 +90,7 @@ describe('generateCaption', () => {
   })
 
   it('formats price in Naira with thousands separator', () => {
-    const caption = generateCaption({ ...base, estimatedPriceNaira: 25000 })
+    const caption = generateCaption({ ...base, estimatedPrice: 25000 })
     expect(caption).toContain('₦25,000')
   })
 
@@ -100,5 +102,33 @@ describe('generateCaption', () => {
   it('uses sparkle emoji for dresses', () => {
     const caption = generateCaption({ ...base, brand: null, itemType: 'ankara dress', descriptors: [] })
     expect(caption).toContain('✨')
+  })
+})
+
+describe('formatPrice', () => {
+  it('returns £ symbol for GBP', () => {
+    expect(formatPrice(15, 'GBP')).toBe('£15')
+  })
+
+  it('returns ₦ symbol with thousands separator for NGN', () => {
+    expect(formatPrice(15000, 'NGN')).toBe('₦15,000')
+  })
+
+  it('generateCaption uses £ end-to-end for GBP analysis', () => {
+    const gbpBase: ClothingAnalysis = { ...base, estimatedPrice: 25, currency: 'GBP' }
+    const caption = generateCaption(gbpBase)
+    expect(caption).toContain('£25')
+    expect(caption).not.toContain('₦')
+  })
+
+  it('generateCaption uses ₦ end-to-end for NGN analysis', () => {
+    const caption = generateCaption(base)
+    expect(caption).toContain('₦8,500')
+    expect(caption).not.toContain('£')
+  })
+
+  it('currency param overrides analysis.currency', () => {
+    const caption = generateCaption(base, undefined, 'GBP')
+    expect(caption).toContain('£')
   })
 })

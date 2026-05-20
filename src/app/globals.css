@@ -33,3 +33,32 @@ a,
 [role="button"] {
   min-height: 44px;
 }
+
+@keyframes equalizer {
+  0%, 100% {
+    transform: scaleY(0.2);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes cloth-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cloth-rise {
+  animation: cloth-rise 0.38s ease-out both;
+}
+.cloth-rise-1 { animation-delay: 0.07s; }
+.cloth-rise-2 { animation-delay: 0.14s; }
+.cloth-rise-3 { animation-delay: 0.21s; }

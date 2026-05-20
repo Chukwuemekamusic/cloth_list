@@ -1,4 +1,4 @@
-import type { ClothingAnalysis } from '@/types/clothing'
+import type { ClothingAnalysis, Currency } from '@/types/clothing'
 
 export interface CaptionOverrides {
   size?: string
@@ -25,20 +25,23 @@ function pickEmojis(itemType: string, descriptors: string[]): string {
   return isPremium ? '🔥✨' : '🔥'
 }
 
-function formatPrice(naira: number): string {
-  return `₦${naira.toLocaleString('en-US')}`
+export function formatPrice(price: number, currency: Currency): string {
+  if (currency === 'GBP') return `£${price.toLocaleString('en-GB')}`
+  return `₦${price.toLocaleString('en-US')}`
 }
 
 export function generateCaption(
   analysis: ClothingAnalysis,
-  overrides?: CaptionOverrides
+  overrides?: CaptionOverrides,
+  currency?: Currency
 ): string {
   const effectiveSize = overrides?.size ?? analysis.sizeDetected
-  const effectivePrice = overrides?.price ?? analysis.estimatedPriceNaira
+  const effectivePrice = overrides?.price ?? analysis.estimatedPrice
+  const effectiveCurrency = currency ?? analysis.currency
 
   const emojis = pickEmojis(analysis.itemType, analysis.descriptors)
   const sizeLine = effectiveSize ? `${effectiveSize} available` : 'Size — ask seller'
-  const priceLine = `${formatPrice(effectivePrice)} — DM to order!`
+  const priceLine = `${formatPrice(effectivePrice, effectiveCurrency)} — DM to order!`
 
   const brandedItem = analysis.brand
     ? `${analysis.brand} ${analysis.itemType}`

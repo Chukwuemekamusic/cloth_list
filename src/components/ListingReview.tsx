@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import type { ClothingAnalysis } from '@/types/clothing'
 import { generateCaption } from '@/lib/generateCaption'
 import { shareCaption } from '@/lib/shareCaption'
+import DescriptionAccordion from '@/components/DescriptionAccordion'
 
 interface Props {
   analysis: ClothingAnalysis
@@ -15,9 +16,9 @@ const CONFIDENCE_BADGE: Record<
   ClothingAnalysis['sizeConfidence'],
   { label: string; className: string }
 > = {
-  high: { label: 'High confidence', className: 'bg-green-900/60 text-green-300' },
-  low: { label: 'Low confidence', className: 'bg-yellow-900/60 text-yellow-300' },
-  none: { label: 'Not detected', className: 'bg-zinc-800 text-zinc-400' },
+  high: { label: 'High confidence', className: 'bg-emerald-950 text-emerald-400 border border-emerald-900/50' },
+  low: { label: 'Low confidence', className: 'bg-amber-950 text-amber-400 border border-amber-900/50' },
+  none: { label: 'Not detected', className: 'bg-zinc-900 text-zinc-500 border border-zinc-800' },
 }
 
 function dataUrlToBlob(dataUrl: string): Blob {
@@ -32,7 +33,7 @@ function dataUrlToBlob(dataUrl: string): Blob {
 
 export default function ListingReview({ analysis, imageDataUrl, onNewItem }: Props) {
   const [sizeOverride, setSizeOverride] = useState(analysis.sizeDetected ?? '')
-  const [priceOverride, setPriceOverride] = useState(String(analysis.estimatedPriceNaira))
+  const [priceOverride, setPriceOverride] = useState(String(analysis.estimatedPrice))
   const [captionText, setCaptionText] = useState(() => generateCaption(analysis))
   const [toast, setToast] = useState<string | null>(null)
   const [sharing, setSharing] = useState(false)
@@ -85,45 +86,52 @@ export default function ListingReview({ analysis, imageDataUrl, onNewItem }: Pro
   const badge = CONFIDENCE_BADGE[analysis.sizeConfidence]
   const charCount = captionText.length
   const overLimit = charCount > 200
+  const currencySymbol = analysis.currency === 'GBP' ? '£' : '₦'
 
   return (
-    <div className="w-full flex flex-col gap-5">
-      {/* Detected details panel */}
-      <div className="w-full rounded-2xl bg-zinc-900 p-4 flex flex-col gap-3">
-        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-          Detected details
-        </h2>
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-          <dt className="text-zinc-500">Item</dt>
-          <dd className="text-zinc-100 font-medium">{analysis.itemType}</dd>
-
-          <dt className="text-zinc-500">Brand</dt>
-          <dd className="text-zinc-100 font-medium">{analysis.brand ?? 'Not detected'}</dd>
-
-          <dt className="text-zinc-500">Color</dt>
-          <dd className="text-zinc-100 font-medium">{analysis.color}</dd>
-
-          <dt className="text-zinc-500">Size</dt>
-          <dd className="flex items-center gap-2 flex-wrap">
-            <span className="text-zinc-100 font-medium">
-              {analysis.sizeDetected ?? '—'}
+    <div className="w-full flex flex-col gap-5 cloth-rise">
+      {/* Item card — hierarchical */}
+      <div className="w-full rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden">
+        <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-widest mb-1.5">Detected item</p>
+            <h2 className="text-xl font-bold text-zinc-50 leading-tight">{analysis.itemType}</h2>
+            {analysis.brand ? (
+              <p className="text-sm text-amber-400 font-semibold mt-0.5">{analysis.brand}</p>
+            ) : (
+              <p className="text-sm text-zinc-700 mt-0.5">Brand not detected</p>
+            )}
+          </div>
+          {/* Price badge */}
+          <div className="flex-shrink-0 rounded-xl border border-zinc-800 bg-zinc-950/80 px-3 py-2 text-right">
+            <p className="text-[10px] text-zinc-600 font-semibold uppercase tracking-wide leading-none mb-1">
+              {analysis.currency}
+            </p>
+            <p className="text-lg font-black text-amber-400 leading-none">
+              {currencySymbol}{analysis.estimatedPrice.toLocaleString('en-US')}
+            </p>
+          </div>
+        </div>
+        {/* Tag row */}
+        <div className="px-4 pb-4 flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-800 border border-zinc-700/40 text-zinc-300 font-medium">
+            {analysis.color}
+          </span>
+          {analysis.sizeDetected && (
+            <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-800 border border-zinc-700/40 text-zinc-300 font-medium">
+              {analysis.sizeDetected}
             </span>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.className}`}>
-              {badge.label}
-            </span>
-          </dd>
-
-          <dt className="text-zinc-500">Price</dt>
-          <dd className="text-zinc-100 font-medium">
-            ₦{analysis.estimatedPriceNaira.toLocaleString('en-US')}
-          </dd>
-        </dl>
+          )}
+          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${badge.className}`}>
+            {badge.label}
+          </span>
+        </div>
       </div>
 
-      {/* Override fields */}
+      {/* Override inputs */}
       <div className="flex gap-3">
         <div className="flex-1 flex flex-col gap-1.5">
-          <label htmlFor="size-override" className="text-xs font-medium text-zinc-400">
+          <label htmlFor="size-override" className="text-[10px] font-semibold text-zinc-600 uppercase tracking-widest">
             Size
           </label>
           <input
@@ -131,13 +139,13 @@ export default function ListingReview({ analysis, imageDataUrl, onNewItem }: Pro
             type="text"
             value={sizeOverride}
             onChange={(e) => handleSizeChange(e.target.value)}
-            placeholder="e.g. L, XL, 42"
-            className="w-full h-11 rounded-xl bg-zinc-900 border border-zinc-700 px-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500"
+            placeholder="L, XL, 42…"
+            className="w-full h-11 rounded-xl bg-zinc-900 border border-zinc-800 px-3 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-zinc-600 transition-colors duration-150"
           />
         </div>
         <div className="flex-1 flex flex-col gap-1.5">
-          <label htmlFor="price-override" className="text-xs font-medium text-zinc-400">
-            Price (₦)
+          <label htmlFor="price-override" className="text-[10px] font-semibold text-zinc-600 uppercase tracking-widest">
+            Price ({currencySymbol})
           </label>
           <input
             id="price-override"
@@ -145,19 +153,19 @@ export default function ListingReview({ analysis, imageDataUrl, onNewItem }: Pro
             min="0"
             value={priceOverride}
             onChange={(e) => handlePriceChange(e.target.value)}
-            placeholder="e.g. 15000"
-            className="w-full h-11 rounded-xl bg-zinc-900 border border-zinc-700 px-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500"
+            placeholder="0"
+            className="w-full h-11 rounded-xl bg-zinc-900 border border-zinc-800 px-3 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-zinc-600 transition-colors duration-150"
           />
         </div>
       </div>
 
-      {/* Caption textarea */}
-      <div className="flex flex-col gap-1.5">
+      {/* Caption — centrepiece */}
+      <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <label htmlFor="caption" className="text-xs font-medium text-zinc-400">
+          <label htmlFor="caption" className="text-[10px] font-semibold text-zinc-600 uppercase tracking-widest">
             Caption
           </label>
-          <span className={`text-xs tabular-nums ${overLimit ? 'text-red-400' : 'text-zinc-500'}`}>
+          <span className={`text-xs tabular-nums font-semibold ${overLimit ? 'text-red-400' : 'text-zinc-700'}`}>
             {charCount} / 200
           </span>
         </div>
@@ -166,41 +174,51 @@ export default function ListingReview({ analysis, imageDataUrl, onNewItem }: Pro
           value={captionText}
           onChange={(e) => setCaptionText(e.target.value)}
           rows={5}
-          className="w-full rounded-xl bg-zinc-900 border border-zinc-700 px-3 py-2.5 text-sm text-zinc-100 resize-none focus:outline-none focus:border-zinc-500 leading-relaxed"
+          className={`w-full rounded-xl bg-zinc-900 border px-3 py-3 text-sm text-zinc-100 resize-none focus:outline-none leading-relaxed transition-colors duration-150 ${
+            overLimit
+              ? 'border-red-900 focus:border-red-700'
+              : 'border-zinc-800 focus:border-zinc-600'
+          }`}
         />
       </div>
 
-      {/* Share / Copy */}
+      {/* Share / Copy — primary CTA */}
       <div className="relative">
         <button
           onClick={handleShare}
           disabled={sharing}
-          className="w-full h-14 rounded-2xl bg-white text-zinc-950 font-semibold text-base active:scale-95 transition-transform disabled:opacity-50"
+          className="w-full h-14 rounded-2xl bg-amber-400 text-zinc-950 font-bold text-base active:scale-[0.98] transition-transform disabled:opacity-50"
         >
           {sharing ? 'Sharing…' : 'Share / Copy'}
         </button>
         {toast && (
-          <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-zinc-800 text-zinc-100 text-xs font-medium px-3 py-1.5 rounded-full shadow-lg">
+          <div className="absolute -top-11 left-1/2 -translate-x-1/2 whitespace-nowrap bg-zinc-800 border border-zinc-700 text-zinc-100 text-xs font-semibold px-3.5 py-2 rounded-full shadow-xl">
             {toast}
           </div>
         )}
       </div>
 
-      {/* Regenerate */}
-      <button
-        onClick={regenerate}
-        className="w-full h-12 rounded-2xl border border-zinc-700 text-zinc-300 font-medium text-sm active:scale-95 transition-transform"
-      >
-        Regenerate caption
-      </button>
+      {/* Secondary actions */}
+      <div className="flex gap-2">
+        <button
+          onClick={regenerate}
+          className="flex-1 h-11 rounded-xl border border-zinc-800 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700 font-medium text-sm active:scale-95 transition-all duration-150"
+        >
+          Regenerate
+        </button>
+        <button
+          onClick={onNewItem}
+          className="flex-1 h-11 rounded-xl border border-zinc-800 text-zinc-600 hover:text-zinc-400 font-medium text-sm active:scale-95 transition-all duration-150"
+        >
+          New item
+        </button>
+      </div>
 
-      {/* New item */}
-      <button
-        onClick={onNewItem}
-        className="w-full h-12 rounded-2xl border border-zinc-800 text-zinc-500 font-medium text-sm active:scale-95 transition-transform"
-      >
-        New item
-      </button>
+      {/* Listing description accordion */}
+      <DescriptionAccordion
+        rawDescriptionDraft={analysis.rawDescriptionDraft}
+        currency={analysis.currency}
+      />
     </div>
   )
 }

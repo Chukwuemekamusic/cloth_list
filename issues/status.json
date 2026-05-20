@@ -1,14 +1,6 @@
 {
   "prd": "issues/prd.md",
-  "cycle": 1,
-  "issues": {
-    "001-project-scaffold.md": "done",
-    "002-image-input-module.md": "done",
-    "003-ai-analysis-api-and-module.md": "done",
-    "004-caption-generator-module.md": "done",
-    "005-end-to-end-listing-flow.md": "done",
-    "006-share-copy-module.md": "done",
-    "007-pwa-hardening.md": "todo"
-  },
+  "cycle": 3,
+  "issues": {},
   "last_updated": "2026-05-20"
 }

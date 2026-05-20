@@ -1,10 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
-import type { ClothingAnalysis } from '@/types/clothing'
+import type { ClothingAnalysis, Currency } from '@/types/clothing'
 
-const SYSTEM_PROMPT = `You are an expert clothing analyst for an African resale marketplace.
-Analyze the clothing item in the image and return ONLY valid JSON — no prose, no markdown fences.
-
-Nigerian resale price ranges (₦):
+const NGN_PRICE_RANGES = `Nigerian resale price ranges (₦):
 - Basic T-shirt: 3000–8000
 - Polo shirt: 5000–15000
 - Jeans: 8000–25000
@@ -14,7 +11,25 @@ Nigerian resale price ranges (₦):
 - Suit/blazer: 20000–60000
 - Hoodie/sweatshirt: 8000–22000
 - Native attire (agbada, etc.): 15000–60000
-- Children's clothing: 2000–10000
+- Children's clothing: 2000–10000`
+
+const GBP_PRICE_RANGES = `UK secondhand/upcycled price ranges (£):
+- Basics (plain tees, vests): £5–15
+- Good-condition branded pieces: £15–40
+- Curated upcycled items: £20–60
+- Handmade or altered statement pieces: £40–120`
+
+function buildSystemPrompt(currency: Currency): string {
+  const priceRanges = currency === 'GBP' ? GBP_PRICE_RANGES : NGN_PRICE_RANGES
+  const priceNote =
+    currency === 'GBP'
+      ? '"estimatedPrice": <number, midpoint of the UK secondhand range for this item in £>'
+      : '"estimatedPrice": <number, midpoint of the Nigerian resale range for this item in ₦>'
+
+  return `You are an expert clothing analyst.
+Analyze the clothing item in the image and return ONLY valid JSON — no prose, no markdown fences.
+
+${priceRanges}
 
 Return this exact JSON shape:
 {
@@ -24,11 +39,14 @@ Return this exact JSON shape:
   "pattern": "<pattern if present, e.g. 'striped', 'floral', 'plain', else null>",
   "sizeDetected": "<size label if readable in image, else null>",
   "sizeConfidence": "<'high' if read from visible label, 'low' if estimated from proportions, 'none' if not determinable>",
-  "estimatedPriceNaira": <number, midpoint of the Nigerian resale range for this item>,
+  ${priceNote},
+  "currency": "${currency}",
+  "rawDescriptionDraft": "<2-3 sentences describing only what is visually observable: item type, notable features, colours, visible materials. Do not invent provenance or origin story.>",
   "descriptors": ["<1-4 short descriptors like 'slim fit', 'cotton', 'vintage', 'premium'>"]
 }`
+}
 
-function parseAnalysis(text: string): ClothingAnalysis {
+export function parseAnalysis(text: string): ClothingAnalysis {
   let raw: unknown
   try {
     raw = JSON.parse(text.trim())
@@ -49,14 +67,19 @@ function parseAnalysis(text: string): ClothingAnalysis {
     sizeDetected: typeof r.sizeDetected === 'string' ? r.sizeDetected : null,
     sizeConfidence:
       r.sizeConfidence === 'high' || r.sizeConfidence === 'low' ? r.sizeConfidence : 'none',
-    estimatedPriceNaira: typeof r.estimatedPriceNaira === 'number' ? r.estimatedPriceNaira : 5000,
+    estimatedPrice: typeof r.estimatedPrice === 'number' ? r.estimatedPrice : 5000,
+    currency: r.currency === 'GBP' || r.currency === 'NGN' ? r.currency : 'NGN',
+    rawDescriptionDraft: typeof r.rawDescriptionDraft === 'string' ? r.rawDescriptionDraft : '',
     descriptors: Array.isArray(r.descriptors)
       ? (r.descriptors as unknown[]).filter((d): d is string => typeof d === 'string')
       : [],
   }
 }
 
-export async function analyzeClothingImage(base64Image: string): Promise<ClothingAnalysis> {
+export async function analyzeClothingImage(
+  base64Image: string,
+  currency: Currency = 'GBP'
+): Promise<ClothingAnalysis> {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
   let data = base64Image
@@ -72,8 +95,8 @@ export async function analyzeClothingImage(base64Image: string): Promise<Clothin
 
   const message = await client.messages.create({
     model: 'claude-opus-4-7',
-    max_tokens: 512,
-    system: SYSTEM_PROMPT,
+    max_tokens: 640,
+    system: buildSystemPrompt(currency),
     messages: [
       {
         role: 'user',
@@ -93,5 +116,3 @@ export async function analyzeClothingImage(base64Image: string): Promise<Clothin
 
   return parseAnalysis(textBlock.text)
 }
-
-export { parseAnalysis }

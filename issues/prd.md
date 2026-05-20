@@ -1,159 +1,166 @@
-# PRD: WhatsApp-First AI Listing Tool for African Clothing Resellers
+# PRD: Multi-Currency Pricing & Long-Form Listing Description
 
-**Working title:** ClothList  
-**Version:** 1.0 (MVP)  
-**Date:** 2026-05-18
+**Working title:** ClothList — Cycle 2
+**Version:** 1.0
+**Date:** 2026-05-20
 
 ---
 
 ## Problem Statement
 
-Informal clothing resellers in Nigeria (and across West and East Africa) sell primarily through WhatsApp Status, Instagram, and Facebook Marketplace. Their core workflow is manual and repetitive: photograph an item, think of a compelling caption, note the size and price, then paste all of this into each platform individually.
+ClothList's Cycle 1 MVP is built for the Lagos resale market: prices in Naira, 3-line WhatsApp captions, copy-to-clipboard. It does not serve sellers on Western secondhand platforms. A UK-based seller of upcycled clothing using eBay, Vinted, and Shopify needs two things the current app cannot provide:
 
-This process is slow, mentally draining, and scales poorly. A seller with 20 items to list in a day spends hours on caption writing rather than selling. There is no affordable tool that addresses this workflow for African resellers — existing AI listing tools are built for Western platforms (eBay, Depop, Vinted), priced in USD, and assume desktop-first usage patterns.
+1. **Market-appropriate pricing in £.** Nigerian resale prices and UK secondhand prices are not conversions of each other — they reflect entirely different markets. A hardcoded ₦ symbol and Nigerian price ranges produce meaningless output for a UK seller.
+
+2. **A richer listing description.** eBay, Vinted, and Shopify listings require 80–150 word descriptions that convey provenance, materials, and style — not a 3-line WhatsApp caption. For upcycled one-of-a-kind pieces, the description must capture the origin story (e.g. "originally a flawed pink sweatshirt, hand-dyed lilac") that only the seller knows and that no photo can reveal. There is currently no way to produce or edit this kind of copy inside the app.
 
 ---
 
 ## Solution
 
-A mobile-first Progressive Web App (PWA) that lets a reseller snap or upload a photo of a clothing item and instantly receive a short, punchy, WhatsApp-ready caption — including item name, key details, size, and a suggested price in Naira — which they can edit and copy to clipboard in one tap.
+**Multi-currency toggle:** A `₦ NGN / £ GBP` pill button on the input screen (defaulting to GBP) selects the market before analysis. The selected currency is sent to the Claude analysis API so pricing is estimated in the correct market context from the start. Switching currency after analysis prompts re-analysis rather than silently converting numbers.
 
-No account required. No app store. Works on any Android browser. Fast enough to list an item in under 30 seconds.
+**Long-form description generator:** An expandable "Add listing description" accordion on the review screen gives sellers a two-step path to polished copy. Claude generates a raw visual draft during the analysis call (no extra image send). The seller opens the accordion, optionally adds context notes about details Claude cannot see, taps "Generate description" to load the draft instantly, edits freely, then taps "Polish with AI" to have Claude rewrite the current text into a flowing 80–120 word listing description. A separate "Copy description" button copies it independently of the WhatsApp caption.
 
 ---
 
 ## User Stories
 
-### Photo Input
-1. As a reseller, I want to take a photo directly from the app using my phone camera, so that I don't have to open a separate camera app and re-upload.
-2. As a reseller, I want to upload a photo from my phone gallery, so that I can use photos I already have.
-3. As a reseller, I want to see a preview of my photo before generating a caption, so that I can confirm I've selected the right image.
-4. As a reseller, I want to retake or replace the photo before generating, so that I can fix a bad shot without starting over.
-5. As a reseller, I want the app to work on a low-end Android phone with a modest camera, so that I'm not excluded by hardware limitations.
+### Currency
 
-### AI Analysis
-6. As a reseller, I want the app to automatically identify the type of clothing item from my photo, so that I don't have to describe it myself.
-7. As a reseller, I want the AI to detect the brand if it's visible on the item, so that my listing is more accurate without extra effort.
-8. As a reseller, I want the AI to identify the dominant color and pattern of the item, so that the caption describes it accurately.
-9. As a reseller, I want the AI to read the size label from the photo if it's visible, so that I don't have to type it manually.
-10. As a reseller, I want the AI to suggest a price based on the item category, so that I have a starting point even if I don't know the market rate.
-11. As a reseller, I want to see what the AI detected (item type, size, price) before the caption is generated, so that I can catch errors early.
+1. As a UK reseller, I want prices displayed in £ by default, so that captions are ready to post without manual editing.
+2. As a Lagos reseller, I want to switch to ₦ pricing, so that the app still works for my market.
+3. As a seller, I want my currency preference remembered between sessions, so that I don't have to re-set it every time I open the app.
+4. As a seller, I want the currency toggle on the input screen before I take a photo, so that the AI estimates prices in my market from the start.
+5. As a seller, I want to switch currency after getting results, so that I can compare markets if needed.
+6. As a seller, I want a clear prompt when switching currency post-analysis, so that I understand a fresh AI call is needed and can confirm or cancel.
+7. As a seller, I want the suggested price in the caption to reflect the selected market, so that the figure is realistic for my buyers.
+8. As a seller, I want the price override field to show the right currency symbol, so that I know what currency I'm entering.
 
-### Caption Editing
-12. As a reseller, I want to confirm or correct the AI's size detection before the caption is finalized, so that I don't send buyers wrong information.
-13. As a reseller, I want to adjust the suggested price before copying the caption, so that I can set my own margin.
-14. As a reseller, I want to edit the full caption text after it's generated, so that I can add personal touches or fix anything.
-15. As a reseller, I want the caption to be short and punchy (2–4 lines), so that it reads naturally on WhatsApp and Instagram.
-16. As a reseller, I want the caption to include a call to action (e.g. "DM to order"), so that interested buyers know what to do.
-17. As a reseller, I want prices to be displayed in Naira (₦), so that the caption is ready to post without any editing.
-18. As a reseller, I want to regenerate the caption if I don't like the first result, so that I have options.
-19. As a reseller, I want a character count on the caption, so that I can keep it concise.
+### Long-form description — generation
 
-### Copy & Share
-20. As a reseller, I want to copy the caption to clipboard with one tap, so that I can paste it straight into WhatsApp.
-21. As a reseller, I want a clear visual confirmation when the caption is copied, so that I know the copy succeeded.
-22. As a reseller, I want to share the caption and image together via the native Android share sheet, so that I can send both to WhatsApp Status in one action.
-23. As a reseller, I want to share to Instagram, Facebook Marketplace, or any other app through the same share sheet, so that the tool isn't locked to WhatsApp.
+9. As a UK upcycled clothing seller, I want the app to generate a draft listing description from my photo, so that I have a starting point without typing from scratch.
+10. As a seller, I want description generation to happen during the analysis call, so that it is available instantly when I need it without an extra wait.
+11. As a seller, I want to add context notes about things Claude cannot see (origin material, dyeing process, patches, measurements), so that the final description reflects the item's full story.
+12. As a seller, I want the context notes field visible before I generate the description, so that I can fill in details before the draft is populated.
+13. As a seller, I want tapping "Generate description" to be instant, so that I do not wait for another API call just to see the draft.
 
-### General UX
-24. As a reseller, I want the app to load fast on a slow mobile data connection (3G), so that I can use it at the market.
-25. As a reseller, I want to use the app without creating an account or logging in, so that I can start immediately with zero friction.
-26. As a reseller, I want to install the app on my Android home screen, so that I can open it quickly like a native app.
-27. As a reseller, I want the app to work offline for the editing step (after the caption is generated), so that a dropped connection doesn't lose my work.
-28. As a reseller, I want all text in clear, simple English, so that it's accessible regardless of education level.
-29. As a reseller, I want to list a new item immediately after copying a caption, so that I can process multiple items in a session without friction.
+### Long-form description — editing and polishing
+
+14. As a seller, I want to edit the generated draft freely before polishing, so that I can fix errors and add my voice.
+15. As a seller, I want to tap "Polish with AI" to have Claude rewrite my edited draft into professional listing copy, so that the final description sounds polished without me being a copywriter.
+16. As a seller, I want the polish to use my context notes as well as the edited draft, so that Claude has the full picture when rewriting.
+17. As a seller, I want the polished description to be 80–120 words in flowing paragraph form, so that it fits naturally on eBay, Vinted, and Shopify.
+18. As a seller, I want the polish to replace the textarea content, so that I am always editing one version and not juggling two.
+19. As a seller, I want an undo option after polishing, so that I can restore my previous text if the AI version is worse.
+20. As a seller, I want polishing to reflect the selected currency (£ or ₦), so that price references in the description are market-appropriate.
+
+### Long-form description — copy and layout
+
+21. As a seller, I want a "Copy description" button separate from the caption's Share/Copy, so that I can copy the right content for the right platform without mixing them.
+22. As a seller, I want the description section collapsed by default, so that the core WhatsApp caption flow is not cluttered for sellers who don't need descriptions.
+23. As a seller, I want the description section labelled clearly (eBay, Vinted, Shopify), so that I immediately understand what it is for.
+24. As a seller, I want the description and caption to be independent, so that editing one does not affect the other.
 
 ---
 
 ## Implementation Decisions
 
-### Architecture
+### Type changes
 
-The app is a Next.js PWA with API routes that proxy calls to the Claude Vision API. No database. No authentication. All state is ephemeral and held client-side for the duration of a session.
+The `ClothingAnalysis` type is the canonical data shape shared by all modules. Two changes:
 
-### Modules
+- `estimatedPriceNaira: number` is renamed to `estimatedPrice: number` — currency is now tracked separately
+- `currency: 'GBP' | 'NGN'` is added — the currency the price was estimated in
+- `rawDescriptionDraft: string` is added — Claude's raw visual description of the item, generated during analysis
 
-**1. Image Input Module**
-- Handles both camera capture (via browser `MediaDevices.getUserMedia`) and gallery upload (`<input type="file" accept="image/*">`)
-- Compresses image client-side before sending to the API to reduce latency and cost
-- Interface: returns an image blob/base64 string ready for the analysis module
+All downstream modules (`generateCaption`, `ListingReview`, the API route) import this type and must be updated to use the new field names.
 
-**2. AI Analysis Module** *(deep — tested in isolation)*
-- Sends the image to Claude Vision API with a structured prompt
-- Returns a typed JSON object: `{ itemType, brand, color, pattern, sizeDetected, sizeConfidence, estimatedPriceNaira, descriptors[] }`
-- `sizeConfidence` distinguishes between "read from label" (high) and "estimated from proportions" (low) so the UI can prompt accordingly
-- Price estimation is based on Claude's knowledge of Nigerian resale market ranges for the item category — no external API calls in v1
-- Interface is a single async function: `analyzeClothingImage(imageBase64) → ClothingAnalysis`
+### Currency toggle
 
-**3. Caption Generator Module** *(deep — tested in isolation)*
-- Pure function: takes a `ClothingAnalysis` object plus user overrides (`{ size, priceNaira }`) and returns a formatted caption string
-- Caption structure: line 1 = item name + standout detail, line 2 = size availability, line 3 = price + CTA
-- Emoji used sparingly (1–2 per caption, contextually relevant)
-- Interface: `generateCaption(analysis, overrides) → string`
+A `Currency` type alias (`'GBP' | 'NGN'`) is defined alongside or within the `ClothingAnalysis` type for reuse across modules. The toggle state lives in `page.tsx` (or a React context if it grows), defaulting to `'GBP'`, persisted to `localStorage`. It is passed as a prop/parameter to all components and functions that need it.
 
-**4. Caption Editor Component**
-- Pre-filled textarea with the generated caption
-- Inline size and price fields above the textarea so overrides are easy
-- Regenerate button re-calls the caption generator with current overrides (no new AI call needed — pure function)
-- Character count display
+### Analysis module changes
 
-**5. Share / Copy Module** *(deep — tested in isolation)*
-- Tries `navigator.share({ text, files })` first (Web Share API with image) for native share sheet
-- Falls back to `navigator.clipboard.writeText(caption)` for copy-only
-- Returns a status (`shared` | `copied` | `error`) for UI feedback
-- Interface: `shareCaption(caption, imageBlob) → ShareResult`
+`analyzeClothingImage` accepts a `currency` parameter. The system prompt is extended with two changes:
 
-### API Design
+1. A market-aware pricing section: when `currency === 'GBP'`, Claude is given UK secondhand/upcycled price ranges in £; when `currency === 'NGN'`, it uses the existing Nigerian ranges in ₦.
+2. An additional JSON field `rawDescriptionDraft`: Claude writes 2–3 sentences describing what it visually observes in the image — item type, notable features, colors, materials visible. No origin story is invented; this is observation only.
 
-One server-side API route: `POST /api/analyze`
-- Accepts: `{ image: base64string }`
-- Returns: `ClothingAnalysis` JSON
-- Claude API key is server-side only, never exposed to the client
-- Rate limiting: simple IP-based throttle (10 requests/hour per IP) to prevent abuse without requiring auth
+The `parseAnalysis` function is updated to extract `estimatedPrice`, `currency`, and `rawDescriptionDraft` from the JSON.
 
-### PWA Configuration
-- `manifest.json` with `display: standalone`, icon set, theme color
-- Service worker for shell caching (offline access to the UI after first load)
-- Camera and clipboard permissions requested at point of use, not on app open
+The `POST /api/analyze` route is updated to accept and validate a `currency` field in the request body, defaulting to `'GBP'` if absent.
 
-### Tech Stack
-- **Framework:** Next.js (App Router)
-- **AI:** Claude API — `claude-haiku-4-5` for cost efficiency; upgradeable to `claude-sonnet-4-6` if analysis quality needs improvement
-- **Styling:** Tailwind CSS (mobile-first)
-- **Deployment:** Vercel
-- **No database, no auth, no third-party integrations in v1**
+### Caption generator changes
+
+`formatPrice(price: number, currency: Currency) → string` replaces the current hardcoded `₦` formatter. `generateCaption` accepts `currency` as a required parameter (alongside `analysis` and `overrides`). All call sites are updated.
+
+### Polish API — new deep module
+
+A new `polishDescription(draft: string, notes: string, currency: Currency) → Promise<string>` function encapsulates the Claude text-only call. It is called by the new `POST /api/polish` route.
+
+The `POST /api/polish` route:
+- Accepts `{ draft: string, notes: string, currency: 'GBP' | 'NGN' }`
+- Validates that `draft` is a non-empty string
+- Runs the same IP-based rate limiter as `/api/analyze`
+- Calls `polishDescription`, returns `{ description: string }`
+- On Claude error, returns a structured error response (not a 500 crash)
+
+The polish prompt instructs Claude to rewrite the provided text into a flowing paragraph of 80–120 words in the style of a premium secondhand/upcycled clothing listing. It incorporates any seller notes. If `currency === 'GBP'`, any price references use £; if `'NGN'`, ₦.
+
+### Description accordion UI
+
+A new `DescriptionAccordion` component receives `rawDescriptionDraft`, `currency`, and no other external dependencies. Internal state: `isOpen`, `contextNotes`, `descriptionText`, `previousText` (for undo), `isPolishing`.
+
+Layout when open (top to bottom):
+1. Context notes textarea — optional, placeholder explains its purpose
+2. "Generate description" button — synchronous, sets `descriptionText` from `rawDescriptionDraft`, appends context notes as a visible note if present
+3. Description textarea — editable; empty until Generate is tapped
+4. "Polish with AI" button — disabled while polishing; on click, calls `POST /api/polish`, saves `descriptionText` to `previousText`, replaces with result
+5. "Undo" link/button — visible only after a polish has been applied; restores `previousText`
+6. "Copy description" button — copies `descriptionText` to clipboard; shows brief toast confirmation
+
+`ListingReview` is updated to accept `rawDescriptionDraft` and `currency` props and render `DescriptionAccordion` below the existing New Item button.
+
+`page.tsx` is updated to:
+- Hold `currency` state (defaulting to `'GBP'`, synced to `localStorage`)
+- Pass `currency` to `POST /api/analyze`
+- Pass `rawDescriptionDraft` and `currency` to `ListingReview`
+- Show a "Re-analyse with £/₦ prices?" confirmation when `currency` is changed after an analysis result is already in state
 
 ---
 
 ## Testing Decisions
 
-**What makes a good test here:** Tests should verify observable output for a given input — not implementation internals. A good test for `generateCaption` checks that the output string contains the item name, price, and a call to action. It does not check which internal string methods were called.
+**What makes a good test:** Tests verify observable outputs for given inputs — not which internal methods were called. A good test for `polishDescription` verifies that the returned string is non-empty and that errors from Claude produce a thrown error, not that `client.messages.create` was called with specific parameters.
 
 **Modules to test:**
 
-- **`analyzeClothingImage`** — mock the Claude API response; verify the function correctly parses and types the returned JSON, handles missing fields gracefully, and rejects malformed responses with a clear error.
-- **`generateCaption`** — unit tests covering: standard item with all fields, item with no brand detected, item where size confidence is low, price override by user, very long item descriptors (truncation behaviour).
-- **`shareCaption`** — mock `navigator.share` and `navigator.clipboard`; verify correct fallback logic (share → copy → error), and that the correct status is returned in each case.
+- **`generateCaption` (updated)** — All existing tests are updated to pass `currency` explicitly. New tests: `formatPrice` returns `£15` for GBP and `₦15,000` for NGN; caption includes the correct symbol end-to-end. Prior art: `src/__tests__/generateCaption.test.ts`.
+
+- **`parseAnalysis` (updated)** — New tests: correctly extracts `estimatedPrice`, `currency`, and `rawDescriptionDraft` from a full mock response; falls back gracefully when `rawDescriptionDraft` is missing (empty string). Prior art: `src/__tests__/analyzeClothingImage.test.ts`.
+
+- **`polishDescription` (new)** — Mock the Claude API client. Tests: returns the polished description string on success; includes `draft` content in the prompt sent to Claude; includes `notes` when provided; handles Claude API error by throwing a descriptive error. This is a deep module — the interface is simple (`draft, notes, currency → string`) and fully testable without a real API key.
 
 ---
 
 ## Out of Scope
 
-- User accounts, login, or listing history
-- Direct WhatsApp, Instagram, or Facebook API integration
-- Live price scraping from Jiji or Jumia
-- Inventory management or bulk listing
-- Western resale platforms (eBay, Vinted, Shopify, Poshmark)
-- Nigerian Pidgin or other language support
-- Payments or in-app monetisation
-- Analytics or usage tracking
-- Multi-photo listings (single photo only in v1)
+- Direct eBay, Vinted, or Shopify API integration (listing descriptions are copy-pasted manually)
+- More than two currencies (GBP and NGN only in this cycle)
+- Style controls for Polish ("make it shorter", "more formal", "more casual")
+- Description regeneration button (Polish + Undo covers the use case)
+- Saving captions or descriptions to local listing history
+- Live price scraping or market data APIs
+- Automatic currency detection from browser locale
 
 ---
 
 ## Further Notes
 
-- **Friend validation (end of week ~2026-05-23):** User's friend sells revamped + resold clothes on eBay, Vinted, and Shopify. Her workflow feedback may surface UX issues not visible from the Lagos market context. Treat her as a secondary test user for v1.
-- **Lagos market seller:** Buys bulk clothing from China, sells informally. Does inventory manually. Potential v2 feature: inventory tracking (scan items into a list, track what's sold). Keep data model in mind.
-- **Pricing in v1:** Claude's price estimates will be rough. The goal is to give sellers a starting point, not a definitive market rate. UI copy should set this expectation ("Suggested price — adjust to your margin").
-- **Android first:** The Web Share API with file sharing is well-supported on Android Chrome. iOS Safari has limitations with `navigator.share` for files — acceptable to degrade gracefully to copy-only on iOS for MVP.
+- **Friend validation (~2026-05-23):** The primary test user for Cycle 2 is a UK seller of upcycled clothing on eBay, Vinted, and Shopify. GBP is the default currency for this reason. Her feedback may surface description format issues (length, tone, platform fit) that should inform Cycle 3.
+- **UK upcycled price ranges for the Claude prompt:** Secondhand/upcycled clothing in the UK typically ranges £5–15 for basics, £15–40 for good-condition branded pieces, £20–60 for curated upcycled items, £40–120 for handmade or altered statement pieces. These should be included in the GBP pricing section of the system prompt.
+- **`rawDescriptionDraft` is observation-only:** Claude should describe only what it sees. It must not invent provenance details ("this may have been dyed"). The seller's context notes are the only source for origin story details.
+- **Re-analysis on currency switch:** When the seller switches currency after results are shown, the confirmation wording should be direct: "Switching to £ needs a fresh analysis — re-analyse now?" This sets the right expectation that the price will change, not just the symbol.
+- **Undo scope:** Undo only restores the pre-polish text. It does not undo manual edits the seller made before polishing. One level of undo is sufficient.
+- **`max_tokens` for polish route:** The description is capped at 120 words (~160 tokens). Set `max_tokens: 256` on the polish Claude call — generous enough for the output, cheap enough not to worry about.
