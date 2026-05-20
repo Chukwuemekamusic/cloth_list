@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cloth Resell
 
-## Getting Started
+An AI-powered listing tool for clothing resellers. Take a photo of an item, get an instant draft listing with title, price suggestion, and a polished two-paragraph description — ready to post on eBay, Vinted, or Shopify.
 
-First, run the development server:
+## How it works
+
+1. Upload a photo of the clothing item
+2. Claude analyses the image and generates a draft listing (title, price, description)
+3. Add any seller notes (measurements, condition, story behind the piece)
+4. Hit polish — Claude rewrites the description into a clean, platform-ready format
+5. Copy and post
+
+## Tech stack
+
+- [Next.js](https://nextjs.org) (App Router)
+- [Claude API](https://docs.anthropic.com) — vision analysis + description generation
+- Supports GBP and NGN pricing
+
+## Getting started
+
+```bash
+npm install
+```
+
+Copy the example env file and add your Anthropic API key:
+
+```bash
+cp .env.local.example .env.local
+```
+
+```env
+ANTHROPIC_API_KEY=your_key_here
+```
+
+Run the dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## API routes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Route | Method | Description |
+|---|---|---|
+| `/api/analyze` | POST | Analyses a base64 image and returns a draft listing |
+| `/api/polish` | POST | Rewrites a draft description into polished copy |
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Both routes are rate-limited per IP.
