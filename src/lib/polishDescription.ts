@@ -18,9 +18,9 @@ export async function polishDescription(
       ? `\n\nSeller notes about this item:\n${notes.trim()}`
       : ''
 
-  const prompt = `Rewrite the following clothing listing draft into a two-paragraph description in the style of a premium secondhand or upcycled clothing listing suitable for eBay, Vinted, or Shopify. Incorporate any seller notes naturally into the description. ${currencyNote}
+  const prompt = `Rewrite the following clothing listing draft into a two-paragraph description of 100–150 words total, in the style of a premium secondhand or upcycled clothing listing suitable for eBay, Vinted, or Shopify. Incorporate any seller notes naturally into the description. ${currencyNote}
 
-Paragraph 1 (2–3 sentences max): Vibe and concept — what it is, the overall aesthetic, why it's special. Punchy and engaging.
+Paragraph 1 (2–3 sentences): Vibe and concept — what it is, the overall aesthetic, why it's special. Punchy and engaging.
 Paragraph 2: Construction details, key features, measurements if provided, condition notes, and a closing hook.
 
 Return only the two paragraphs separated by a blank line — no preamble, no quotes, no extra formatting.
@@ -30,7 +30,7 @@ ${draft}${notesSection}`
 
   const message = await client.messages.create({
     model: 'claude-opus-4-7',
-    max_tokens: 400,
+    max_tokens: 512,
     messages: [{ role: 'user', content: prompt }],
   })
 
